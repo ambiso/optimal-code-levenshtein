@@ -45,6 +45,10 @@ const Q: u8 = 26;
 //     d
 // }
 
+fn cleaned(s: &str) -> String {
+    s.chars().filter(|x| !x.is_numeric()).collect()
+}
+
 fn main() {
     // let mut code = Vec::new();
 
@@ -71,11 +75,17 @@ fn main() {
     let s = String::from_utf8(std::fs::read("pkgs.json").unwrap()).unwrap();
     let pkgs: Vec<String> = serde_json::from_str(&s).unwrap();
     let re = Regex::new(r"_\d+$").unwrap();
+    let cleaned_pkgs: Vec<String> = pkgs.iter().map(|x| cleaned(x)).collect();
     for (i, a) in pkgs.iter().enumerate() {
+        // ignore version suffixes
         if re.is_match(&a) {
             continue;
         }
-        for b in pkgs[i + 1..].iter() {
+        for (j, b) in pkgs[i + 1..].iter().enumerate() {
+            // ignore if they're the same up to a number
+            if cleaned_pkgs[i] == cleaned_pkgs[j + i + 1] {
+                continue;
+            }
             if levenshtein(a.as_bytes(), b.as_bytes()) < 2 {
                 println!("{a} {b}");
             }
